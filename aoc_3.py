@@ -4,11 +4,12 @@
 3. Parse input
 '''
 
-from typing import NamedTuple, List, Tuple
+from typing import List, Tuple, Dict, Set, NamedTuple
+
+from itertools import zip_longest
 
 # read input
 def get_wire_plans(file: str) -> Tuple[List[str], List[str]]:
-    raw_data: List[str] = []
     with open(file, 'r') as f:
         raw_data = f.readlines()
 
@@ -20,65 +21,68 @@ def get_wire_plans(file: str) -> Tuple[List[str], List[str]]:
 
     return wire1, wire2
 
-plan1, plan2 = get_wire_plans('test0')
 
 
-class Point:
-    def __init__(self, x: int, y: int) -> None:
-        self.x = x
-        self.y = y
 
-    def __repr__(self) -> str:
-        return repr(f'({self.x},{self.y})')
+# class Point:
+#     def __init__(self, x: int, y: int) -> None:
+#         self.x = x
+#         self.y = y
+#
+#     def __eq__(self, other) -> bool:
+#         return (self.x == other.x) and (self.y == other.y)
+#
+#     def __repr__(self) -> str:
+#         return repr(f'({self.x},{self.y})')
+#
+#     def __str__(self) -> str:
+#         return f'({self.x},{self.y})'
 
-    def __str__(self) -> str:
-        return repr(f'({self.x},{self.y})')
+class Point(NamedTuple):
+    x: int
+    y: int
+
 
 Plan = List[str]
 
 
-class Path:
-    def __init__(self, start: Point) -> None:
-        self.origin = start
-        self.data: List[Point] = []
+def manhattan_distance(point1: Point, point2: Point) -> float:
+    xdist = abs(point2.x - point1.x)
+    ydist = abs(point2.y - point1.y)
+    return xdist + ydist
 
-    def add(self, new_point: Point) -> None:
-        self.data.append(new_point)
 
-    def __repr__(self) -> str:
-        str_path = str(self.data[0])
-        for item in self.data[1:]:
-            str_path += f'-> {item} '
-        return str_path
+def get_positions(start_point: Point,
+                         plan: Plan) -> Set[Tuple[int, int]]:
 
-def get_current_position(start_point: Point, plan: Plan) -> Tuple[Point, Path]:
-    path = Path(start_point)
+    x = start_point.x
+    y = start_point.y
+    set_of_points: Set[Tuple[int, int]] = set()
 
     for instruction in plan:
         direction: str = instruction[0]
         steps: int = int(instruction[1:])
+        while steps > 0:
+            if direction == 'L':
+                x -= 1
+            elif direction == 'R':
+                x += 1
+            elif direction == 'U':
+                y += 1
+            elif direction == 'D':
+                y -= 1
+            else:
+                raise ValueError(f'Wrong direction {direction}')
 
-        if direction == 'L':
-            start_point.x -= steps
-            path.add(Point(start_point.x, start_point.y))
-        elif direction == 'R':
-            start_point.x += steps
-            path.add(Point(start_point.x, start_point.y))
-        elif direction == 'U':
-            start_point.y += steps
-            path.add(Point(start_point.x, start_point.y))
-        elif direction == 'D':
-            start_point.y -= steps
-            path.add(Point(start_point.x, start_point.y))
-        else:
-            raise ValueError('Invalid direction')
-    return start_point, path
+            set_of_points.add(Point(x, y))
+            steps -= 1
+    return set_of_points
 
-position1, path1 = get_current_position(Point(0,0), plan1)     # plan1 = 'R8,U5,L5,D3'
-position2, path2 = get_current_position(Point(0,0), plan2)     # plan1 = 'R8,U5,L5,D3'
+plan1, plan2 = get_wire_plans('aoc3')
+start_position = Point(0, 0)
+points1 = get_positions(start_position, plan1)
+points2 = get_positions(start_position, plan2)
+crossings = points1.intersection(points2)
 
 
-# TODO:
-#   1. take both plans, increment both wire positions by 1 always checking
-#   if they are equal, if they are, append to list of equal positions
-
+min(manhattan_distance(start_position, p) for p in crossings)
