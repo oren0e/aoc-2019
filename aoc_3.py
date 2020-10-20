@@ -53,11 +53,13 @@ def manhattan_distance(point1: Point, point2: Point) -> float:
 
 
 def get_positions(start_point: Point,
-                         plan: Plan) -> Set[Tuple[int, int]]:
+                         plan: Plan) -> Tuple[Set[Tuple[int, int]], Dict[Point, int]]:
 
     x = start_point.x
     y = start_point.y
     set_of_points: Set[Tuple[int, int]] = set()
+    steps_to_position: Dict[Point, int] = {}
+    accum: int = 0
 
     for instruction in plan:
         direction: str = instruction[0]
@@ -65,24 +67,32 @@ def get_positions(start_point: Point,
         while steps > 0:
             if direction == 'L':
                 x -= 1
+                accum += 1
             elif direction == 'R':
                 x += 1
+                accum += 1
             elif direction == 'U':
                 y += 1
+                accum += 1
             elif direction == 'D':
                 y -= 1
+                accum += 1
             else:
                 raise ValueError(f'Wrong direction {direction}')
 
-            set_of_points.add(Point(x, y))
+            p = Point(x, y)
+            set_of_points.add(p)
+            steps_to_position[p] = accum
             steps -= 1
-    return set_of_points
+    return set_of_points, steps_to_position
 
 plan1, plan2 = get_wire_plans('aoc3')
 start_position = Point(0, 0)
-points1 = get_positions(start_position, plan1)
-points2 = get_positions(start_position, plan2)
+points1, steps_dict1 = get_positions(start_position, plan1)
+points2, steps_dict2 = get_positions(start_position, plan2)
 crossings = points1.intersection(points2)
 
-
+# part 1
 min(manhattan_distance(start_position, p) for p in crossings)
+# part 2
+min((steps_dict1[p] + steps_dict2[p]) for p in crossings)
